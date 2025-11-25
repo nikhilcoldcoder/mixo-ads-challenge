@@ -1,30 +1,29 @@
-import React, { useEffect } from "react";
-import useCampaigns from "../hooks/useCampaigns";
-import StatCards from "./StatCards";
-import CampaignTable from "./CampaignTable";
-import Sidebar from "./Sidebar";
-function Dashboard() {
-  const { campaigns, loading } = useCampaigns();
-console.log("Campaigns data:", campaigns)
+import React, { useEffect, useState } from "react";
+import StatCards from "../components/StatCards";
+import CampaignTable from "../components/CampaignTable";
 
-useEffect(() => {
-    console.log("Campaigns state:", campaigns); // 👈 logs whenever campaigns updates
-  }, [campaigns]);
+export default function Dashboard() {
+  const [campaigns, setCampaigns] = useState([]);
 
-  if (loading) return <h2 style={{ padding: 20 }}>Loading campaigns...</h2>;
+  useEffect(() => {
+    fetch("https://mixo-fe-backend-task.vercel.app/campaigns")
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("API Data:", data);
+        setCampaigns(data.campaigns); // IMPORTANT
+      })
+      .catch((err) => console.log(err));
+  }, []);
 
   return (
-    <div style={{ display: "flex", padding: 20, gap: 20 }}>
-      <div style={{ flex: 3 }}>
-        <StatCards campaigns={campaigns} />
-        <CampaignTable campaigns={campaigns} />
-      </div>
+    <div style={{ padding: 20 }}>
+      <h2>Campaign Dashboard</h2>
 
-      <div style={{ flex: 1 }}>
-        <Sidebar campaigns={campaigns} />
-      </div>
+      {/* Stat Cards */}
+      <StatCards campaigns={campaigns} />
+
+      {/* Table */}
+      <CampaignTable campaigns={campaigns} />
     </div>
   );
 }
-
-export default Dashboard;
