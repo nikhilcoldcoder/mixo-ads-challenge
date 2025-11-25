@@ -1,7 +1,10 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "../utils/format";
 
 export default function CampaignTable({ campaigns = [] }) {
+  const navigate = useNavigate();
+
   const getStatusBadge = (status) => {
     switch (status) {
       case "active":
@@ -13,6 +16,10 @@ export default function CampaignTable({ campaigns = [] }) {
       default:
         return <span style={{ color: "#858796" }}>⚪ {status}</span>;
     }
+  };
+
+  const handleRowClick = (id) => {
+    navigate(`/campaign/${id}`); // navigate to details page
   };
 
   return (
@@ -32,10 +39,15 @@ export default function CampaignTable({ campaigns = [] }) {
         {campaigns.map((c, i) => (
           <tr
             key={c.id}
+            onClick={() => handleRowClick(c.id)}
             style={{
-              background: i % 2 === 0 ? "#f9f9f9" : "#fff", // zebra striping
+              background: i % 2 === 0 ? "#f9f9f9" : "#fff",
               borderBottom: "1px solid #eee",
+              cursor: "pointer",
+              transition: "0.2s",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#e6f0ff")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? "#f9f9f9" : "#fff")}
           >
             <td style={td}>{c.name}</td>
             <td style={td}>{formatCurrency(c.budget)}</td>
