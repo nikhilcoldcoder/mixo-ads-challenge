@@ -1,7 +1,6 @@
 import React from "react";
 import { formatNumber, formatCurrency } from "../utils/format";
 
-
 export default function CampaignTable({ campaigns }) {
   return (
     <table style={{ width: "100%", borderCollapse: "collapse" }}>

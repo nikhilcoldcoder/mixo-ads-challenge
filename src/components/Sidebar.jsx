@@ -2,7 +2,7 @@ import React from "react";
 import Sparkline from "./Sparkline";
 
 export default function Sidebar({ campaigns }) {
-  const topCampaigns = [...campaigns]
+  const topCampaigns = [...(campaigns || [])]
     .sort((a, b) => b.clicks - a.clicks)
     .slice(0, 5);
 
@@ -10,7 +10,10 @@ export default function Sidebar({ campaigns }) {
     <div>
       <h3>Top Campaigns</h3>
 
-      {topCampaigns.map((c) => (
+      {topCampaigns.length === 0 ? (
+        <p>No campaigns</p>
+      ) : (
+        topCampaigns.map((c) => (
         <div
           key={c.id}
           style={{
@@ -24,7 +27,8 @@ export default function Sidebar({ campaigns }) {
           <strong>{c.name}</strong>
           <Sparkline data={c.daily} />
         </div>
-      ))}
+        ))
+      )}
     </div>
   );
 }

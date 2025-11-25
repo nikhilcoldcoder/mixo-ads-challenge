@@ -5,16 +5,16 @@ import normalizeCampaign from "../utils/normalize";
 export default function useCampaigns() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     async function load() {
       const result = await fetchCampaigns();
-      const normalized = (result.data || []).map(normalizeCampaign);
-      setCampaigns(normalized);
-      const data = await fetchCampaigns();
+      const normalized = (result.campaigns || []).map(normalizeCampaign);
       
-      console.log("📌 Hook received campaigns:", data); // <-- LOG HERE
-
+      
+      setCampaigns(normalized);
+      console.log("Raw API result:", campaigns); // 👈 log before normalization
+      
       setLoading(false);
     }
     load();
