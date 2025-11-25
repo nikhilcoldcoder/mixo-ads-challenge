@@ -40,36 +40,54 @@ export default function CampaignDetails() {
         setLoading(false);
       }
     }
-
     fetchCampaign();
+  }, [id]);
 
     // ----------------------------
     // Real-Time INSIGHTS STREAM (SSE)
     // ----------------------------
-    const eventSource = new EventSource(
-      `https://mixo-fe-backend-task.vercel.app/campaigns/${id}/insights/stream`
-    );
+    useEffect(() => {
+      let eventSource;
+      let retryTimeout;
 
-    eventSource.onmessage = (event) => {
-      try {
-        const parsed = JSON.parse(event.data);
-        console.log("LIVE STREAM INSIGHTS:", parsed);
-        setInsights(parsed);
-      } catch (err) {
-        console.error("Error parsing SSE:", err);
-      }
-    };
+      const connectSSE = () => {
+        console.log("Connecting to SSE...");
 
-    eventSource.onerror = (err) => {
-      console.error("SSE connection failed:", err);
-      eventSource.close();
-    };
+        eventSource = new EventSource(
+          `https://mixo-fe-backend-task.vercel.app/campaigns/${id}/insights/stream`
+        );
 
-    // cleanup on component unmount
-    return () => {
-      eventSource.close();
-    };
-  }, [id]);
+        eventSource.onmessage = (event) => {
+          try {
+            const parsed = JSON.parse(event.data);
+            console.log("LIVE STREAM INSIGHTS:", parsed);
+            setInsights(parsed);
+          } catch (err) {
+            console.error("Error parsing SSE:", err);
+          }
+        };
+
+        eventSource.onerror = (err) => {
+          console.error("SSE connection failed. Retrying in 2 seconds...", err);
+
+          // If the connection errored, close and retry after delay.
+          try {
+            eventSource.close();
+          } catch (e) {}
+
+          retryTimeout = setTimeout(() => connectSSE(), 2000);
+        };
+      };
+
+      connectSSE();
+
+      // cleanup on component unmount
+      return () => {
+        if (eventSource) eventSource.close();
+        if (retryTimeout) clearTimeout(retryTimeout);
+      };
+    }, [id]);
+
 
   if (loading) return <h2 style={{ padding: 20 }}>Loading...</h2>;
   if (!campaign) return <h2 style={{ padding: 20 }}>No campaign found</h2>;
