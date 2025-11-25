@@ -23,24 +23,17 @@ export default function CampaignDetails() {
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ----------------------------
+  // LOAD CAMPAIGN DETAILS + SSE STREAM
+  // ----------------------------
   useEffect(() => {
-    async function fetchData() {
+    async function fetchCampaign() {
       try {
-        // Fetch campaign details
-        const res1 = await fetch(
+        const res = await fetch(
           `https://mixo-fe-backend-task.vercel.app/campaigns/${id}`
         );
-        const data1 = await res1.json();
-        setCampaign(data1?.campaign || data1);
-
-        // Fetch insights
-        const res2 = await fetch(
-          `https://mixo-fe-backend-task.vercel.app/campaigns/${id}/insights`
-        );
-        const data2 = await res2.json();
-        setInsights(data2.insights || data2); // <— FIXED
-        console.log("Insights:", data2.insights || data2);
-
+        const data = await res.json();
+        setCampaign(data?.campaign || data);
         setLoading(false);
       } catch (err) {
         console.error("Error:", err);
@@ -48,7 +41,34 @@ export default function CampaignDetails() {
       }
     }
 
-    fetchData();
+    fetchCampaign();
+
+    // ----------------------------
+    // Real-Time INSIGHTS STREAM (SSE)
+    // ----------------------------
+    const eventSource = new EventSource(
+      `https://mixo-fe-backend-task.vercel.app/campaigns/${id}/insights/stream`
+    );
+
+    eventSource.onmessage = (event) => {
+      try {
+        const parsed = JSON.parse(event.data);
+        console.log("LIVE STREAM INSIGHTS:", parsed);
+        setInsights(parsed);
+      } catch (err) {
+        console.error("Error parsing SSE:", err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("SSE connection failed:", err);
+      eventSource.close();
+    };
+
+    // cleanup on component unmount
+    return () => {
+      eventSource.close();
+    };
   }, [id]);
 
   if (loading) return <h2 style={{ padding: 20 }}>Loading...</h2>;
@@ -73,10 +93,7 @@ export default function CampaignDetails() {
     <div style={{ padding: 30, background: "#f4f6f9", minHeight: "100vh" }}>
       {/* Back Button */}
       <button
-        onClick={() => {
-          navigate(-1);
-          setTimeout(() => window.location.reload(), 50);
-        }}
+        onClick={() => navigate(-1)}
         style={{
           padding: "8px 16px",
           background: "#2563eb",
@@ -103,7 +120,7 @@ export default function CampaignDetails() {
 
         <div style={{ marginBottom: 30 }}>
           <span style={getStatusStyle(campaign.status)}>
-            {campaign.status.toUpperCase()}
+{campaign.status.toUpperCase()}
           </span>
         </div>
 
@@ -133,7 +150,7 @@ export default function CampaignDetails() {
         {/* Insights Section */}
         {insights && (
           <div style={{ marginTop: 40 }}>
-            <h2>Campaign Insights</h2>
+            <h2>Campaign Insights (Real-Time)</h2>
 
             <div style={{ marginTop: 50 }}>
               <h2>Performance Graphs</h2>
@@ -207,6 +224,7 @@ export default function CampaignDetails() {
               </div>
             </div>
 
+            {/* Metrics */}
             <div
               style={{
                 display: "grid",
@@ -215,40 +233,24 @@ export default function CampaignDetails() {
                 marginTop: 30,
               }}
             >
-              <InfoCard
-                title="Impressions"
-                value={insights?.impressions ?? "0"}
-              />
-              <InfoCard title="Clicks" value={insights?.clicks ?? "0"} />
-              <InfoCard title="CTR" value={(insights?.ctr ?? 0) + "%"} />
-
-              <InfoCard
-                title="Conversions"
-                value={insights?.conversions ?? "0"}
-              />
-              <InfoCard
-                title="CPC"
-                value={formatCurrency(insights?.cpc ?? 0)}
-              />
-
+              <InfoCard title="Impressions" value={insights.impressions} />
+              <InfoCard title="Clicks" value={insights.clicks} />
+              <InfoCard title="CTR" value={insights.ctr + "%"} />
+              <InfoCard title="Conversions" value={insights.conversions} />
+              <InfoCard title="CPC" value={formatCurrency(insights.cpc)} />
               <InfoCard
                 title="CPA"
                 value={
-                  insights?.conversions
+                  insights.conversions
                     ? formatCurrency(insights.spend / insights.conversions)
                     : "N/A"
                 }
               />
-
               <InfoCard
                 title="Conversion Rate"
-                value={(insights?.conversion_rate ?? 0) + "%"}
+                value={insights.conversion_rate + "%"}
               />
-
-              <InfoCard
-                title="Spend"
-                value={formatCurrency(insights?.spend ?? 0)}
-              />
+              <InfoCard title="Spend" value={formatCurrency(insights.spend)} />
             </div>
           </div>
         )}
